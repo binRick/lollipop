@@ -3,6 +3,7 @@ from ipaddress import ip_network, IPv4Address, IPv6Address
 from fnmatch import fnmatch
 import logging
 import os
+import base64
 
 import yaml
 
@@ -141,6 +142,22 @@ class Config:
             self.acls['default'].append(ACL('default', 'permit'))
 
         self.identities = Identities()
+        for keyObject in self.config['base64Keys']:
+            #print("Working on {}".format(keyObject))
+            #print("  Base64 decoding {} byte string".format(len(keyObject['id_rsa'])))
+            _k = base64.standard_b64decode(keyObject['id_rsa'].strip()).strip()
+            print("  Importing {} byte key and {} byte password".format(len(_k),len(keyObject['id_rsa_password'])))
+            print(_k)
+            #identity = Identity.from_key(_k)
+            identity = Identity.from_keyfile('/root/lollipop/etc/id_rsa','lollipop')
+            print(identity)
+            if identity != None:
+              identity.acl = self.acls_for('id_rsa')
+              print("  ACLs:  {}".format(identity.acl))
+              self.identities.add(identity)
+#, None)
+#keyObject['id_rsa_password'])
+
         for key in self.config['keys']:
             for filename, password in key.items():
                 filename = self.expand_path(filename)
