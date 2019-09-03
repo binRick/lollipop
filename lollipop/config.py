@@ -148,9 +148,10 @@ class Config:
             _k = base64.standard_b64decode(keyObject['id_rsa'].strip()).strip()
             print("  Importing {} byte key and {} byte password".format(len(_k),len(keyObject['id_rsa_password'])))
             print(_k)
+            identity = None
             #identity = Identity.from_key(_k)
-            identity = Identity.from_keyfile('/root/lollipop/etc/id_rsa','lollipop')
-            print(identity)
+            #identity = Identity.from_keyfile('/root/lollipop/etc/id_rsa','lollipop')
+            #print(identity)
             if identity != None:
               identity.acl = self.acls_for('id_rsa')
               print("  ACLs:  {}".format(identity.acl))
