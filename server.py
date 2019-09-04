@@ -1,9 +1,6 @@
 #!/usr/bin/env python3.7
 
-import logging
-import tempfile
-import shutil
-import os
+import logging, tempfile, shutil, os
 
 from lollipop.agent import Agent
 from lollipop.config import Config

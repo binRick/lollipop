@@ -1,0 +1,6 @@
+➜  lollipop git:(master) ✗ source findSocket.sh
+export SSH_AUTH_SOCK=$(lolliSocket)
+➜  lollipop git:(master) ✗ export SSH_AUTH_SOCK=$(lolliSocket)
+➜  lollipop git:(master) ✗ echo $SSH_AUTH_SOCK
+/var/folders//rk/crn8cq651535cz4qzqcvcxrn29l2n1/T/lollipop-zzk426aa/agent.sock
+➜  lollipop git:(master) ✗
