@@ -1,7 +1,4 @@
-import codecs
-import hashlib
-import logging
-import os
+import codecs, hashlib, logging, os
 
 from . import security
 from .key import Key, DSA, ECDSA, RSA, load_der
