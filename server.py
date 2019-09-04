@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging, tempfile, shutil, os
-
 from lollipop.agent import Agent
 from lollipop.config import Config
 from lollipop.multiplex import multiplexer
