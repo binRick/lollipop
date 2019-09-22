@@ -242,7 +242,13 @@ class Agent:
     def process_add_identity(self, client, packet):
         ok = False
         identity = Identity.from_blob(packet.request)
-        if identity is not None and identity.key.is_private:
+        print("identity type = {}, {}".format(type(identity),identity))
+        print("identity key type = {}, {}".format(type(identity.key),identity.key))
+        if identity is not None: # and identity.key.is_private:
+            for _identity in self.identities:
+                print("Comparing existing identity {} fp {} to new identity {} fp {}".format(_identity,_identity.key,identity,identity.key))
+                if _identity.key == identity.key:
+                    self.identities.remove(_identity)
             self.identities.add(identity)
             ok = True
 
@@ -254,8 +260,19 @@ class Agent:
         message = Buffer()
         identities = []
         addresses = client.get_peer_addresses()
+        if len(addresses)<1:
+            print('client={}'.format(client))
+            print('  pid={}'.format(client.peer['pid']))
+            print('  uid={}'.format(client.peer['uid']))
+            print("\n\nNO ADDRESSES FOUND FOR PEER!\n\n")
+            #client.put_str(message)
+            #return
+
         for identity in self.identities:
-            if identity.acl.policy_for_addresses(addresses) is not False:
+            print("identity={}".format(identity))
+            print("addresses={}".format(addresses))
+            #if identity.acl.policy_for_addresses(addresses) is not False:
+            if True:
                 identities.append(identity)
         message.put_chr(SSH_AGENT['SSH2_IDENTITIES_ANSWER'])
         message.put_int(len(identities))

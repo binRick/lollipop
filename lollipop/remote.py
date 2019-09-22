@@ -84,12 +84,15 @@ class Remote:
         return self.peer
 
     def get_peer_addresses(self):
+        print('self.peer={}'.format(self.peer))
         if self.peer is None:
             self.get_peer()
 
         if 'pid' in self.peer:
             pid = self.peer['pid']
+            print('  self.peer pid={}'.format(pid))
             for address in operatingsystem.get_process_addresses(pid):
+                print('    self.peer address={}'.format(address))
                 self.peer_addresses.add(address)
 
         return self.peer_addresses

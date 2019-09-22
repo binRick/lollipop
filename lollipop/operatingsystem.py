@@ -40,28 +40,37 @@ class Linux(OperatingSystem):
     def get_process_addresses(self, pid):
         inodes = []
         path = '/proc/{}/fd'.format(pid)
+        print('[get_process_addresses] pid={}, path={}'.format(pid, path))
         try:
             for fd in os.listdir(path):
+                print('[get_process_addresses] pid={}, fd={}'.format(pid, fd))
                 try:
                     target = os.readlink(os.path.join(path, fd))
                 except FileNotFoundError:
                     continue
+                print('[get_process_addresses] pid={}, fd={} target={}'.format(pid, fd,target))
                 if target.startswith('socket:['):
-                    inodes.append(target[8:-1])
+                    inode = target[8:-1]
+                    print('   ************   [get_process_addresses] pid={}, fd={} target={}, inode={}'.format(pid, fd,target,inode))
+                    inodes.append(inode)
         except FileNotFoundError:
             return
 
-        logger.debug('possible inodes for pid {}: {}'.format(
+        logger.info('possible inodes for pid {}: {}'.format(
             pid,
             ','.join(inodes) if inodes else 'none',
         ))
         for inode in inodes:
+            print('     [get_process_addresses => inode {}] pid={}'.format(inode,pid))
             for ip in self.get_tcp_sessions_by_inode(inode, pid):
+                print('     [get_process_addresses => inode {}] pid={} ip={}'.format(inode,pid,ip))
                 yield ip
 
     def get_tcp_sessions_by_inode(self, inode, pid=0):
         inode = int(inode)
+        print('[get_tcp_sessions_by_inode => inode={}, pid={}]'.format(inode,pid))
         for family in (netlink.AF_INET, netlink.AF_INET6):
+            print('[get_tcp_sessions_by_inode => inode={}, pid={}] family={}'.format(inode,pid,family))
             payload = netlink.build_inet_diag_request(
                 family,                                 # familiy
                 netlink.IPPROTO_TCP,                    # protocol
@@ -89,7 +98,9 @@ class Linux(OperatingSystem):
                         break
 
                     message = netlink.parse_message(blob)
+                    print('[get_tcp_sessions_by_inode => inode={}, pid={}] family={} MESSAGE={}'.format(inode,pid,family,message))
                     if message['type'] == netlink.DONE:
+                        print('[get_tcp_sessions_by_inode => inode={}, pid={}] family={} MESSAGE={} FINISHED'.format(inode,pid,family,message))
                         finished = True
                         break
                     elif message['type'] == netlink.ERROR:
@@ -100,6 +111,7 @@ class Linux(OperatingSystem):
                     payload_length = blob.tell() - 16 + message['length']
                     payload = netlink.parse_inet_diag_message(blob)
                     attribs = netlink.parse_attributes(blob, payload_length)
+                    print('[get_tcp_sessions_by_inode => inode={}, pid={}] family={} MESSAGE={} payload inode={}..............'.format(inode,pid,family,message,payload['inode']))
                     if payload['inode'] == inode:
                         if family == netlink.AF_INET:
                             yield ipaddress.IPv4Address(payload['dst'][0])
