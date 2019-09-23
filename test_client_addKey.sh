@@ -1,6 +1,7 @@
 #!/bin/bash
 cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) && source test_client_common.sh
-_GEN_KEY_NAME=$(mktemp -p /dev/shm)
+TMP_DIR=/tmp
+_GEN_KEY_NAME=$(mktemp -p $TMP_DIR)
 NEW_KEY=$1
 if [ "$1" == "" ]; then
     NEW_KEY=~/.ssh/id_rsa
