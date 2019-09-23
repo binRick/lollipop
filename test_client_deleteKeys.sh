@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-sleep .5
+sleep .1
 source findSocket.sh >/dev/null
 export SSH_AUTH_SOCK=$(lolliSocket)
-ssh-add -l
+ssh-add -D

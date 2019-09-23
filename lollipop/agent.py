@@ -162,9 +162,11 @@ class AgentClient(Remote):
             self.agent.process_request_identities(self)
 
         elif packet.type == SSH_AGENTC['SSH2_REMOVE_IDENTITY']:
+            print("===================== SSH2_REMOVE_IDENTITY =====================")
             self.agent.process_remove_identity(self, packet)
 
         elif packet.type == SSH_AGENTC['SSH2_REMOVE_ALL_IDENTITIES']:
+            print("===================== SSH2_REMOVE_ALL_IDENTITIES =====================")
             self.agent.process_remove_all_identities(self)
 
         elif packet.type == SSH_AGENTC['SSH2_SIGN_REQUEST']:
@@ -286,10 +288,14 @@ class Agent:
         blob = Buffer(packet.request.pop_str())
         key = Key.from_blob(blob)
 
+        print(" ===========  Removing Key {} from possible loaded {} keys".format(key,len(self.identities)))
         if key is not None:
             if key in self.identities:
+                print("               ===========  Exists!")
                 self.identities.remove_key(key)
                 ok = True
+            else:
+                print("               ===========  Does not Exist!")
 
         client.put_int(1)
         client.put_chr(SSH_AGENT['SUCCESS'] if ok else SSH_AGENT['FAILURE'])
