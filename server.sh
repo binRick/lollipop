@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) && source common.sh
 if [ ! -d venv ]; then
     python3 -m venv venv
 fi

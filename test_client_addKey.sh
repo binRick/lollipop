@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) && source test_client_common.sh
 _GEN_KEY_NAME=$(mktemp -p /dev/shm)
 NEW_KEY=$1
 if [ "$1" == "" ]; then
@@ -17,7 +17,4 @@ if [ ! -f "$NEW_KEY" ]; then
     echo "File \"$_NEW_KEY\" not found"
     exit 1
 fi
-sleep .1
-source findSocket.sh >/dev/null
-export SSH_AUTH_SOCK=$(lolliSocket)
 ssh-add $NEW_KEY

@@ -1,5 +1,3 @@
 #!/bin/bash
-set -e
-source findSocket.sh >/dev/null
-export SSH_AUTH_SOCK=$(lolliSocket)
+cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) && source test_client_common.sh
 ssh-add -l
