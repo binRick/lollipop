@@ -1,5 +1,9 @@
 #!/bin/bash
 cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) && source test_client_common.sh
+command passh -h >/dev/null || {
+    echo passh not found
+    exit 1;
+}
 set -e
 
 ./test_client_listKeys.sh
