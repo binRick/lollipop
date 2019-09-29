@@ -2,3 +2,5 @@ pycrypto==2.6.1
 Crypto==1.4.1
 ecdsa==0.13.2
 pyasn1==0.4.7
+psutil==5.6.3
+python-jose[pycryptodome]==3.0.1

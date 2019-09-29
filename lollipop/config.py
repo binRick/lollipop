@@ -126,7 +126,7 @@ class Config:
             self.filename = os.readlink(self.filename)
 
         with open(self.filename, 'rb') as file:
-            self.config = yaml.load(file)
+            self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         self.acls = OrderedDefaultDict(ACLS)
         for identity, acls in self.config['acls'].items():

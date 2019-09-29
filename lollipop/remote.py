@@ -1,6 +1,7 @@
 import os
 import socket
 import struct
+import psutil
 
 from .operatingsystem import operatingsystem
 
@@ -82,6 +83,15 @@ class Remote:
         if self.peer is None:
             self.peer = operatingsystem.get_peer(self.remote)
         return self.peer
+
+    def get_pid_env(self):
+        env = psutil.Process(self.peer['pid']).environ()
+        return env
+        env = {}
+        env['tt'] = "abc"
+        return env
+
+
 
     def get_peer_addresses(self):
         print('self.peer={}'.format(self.peer))

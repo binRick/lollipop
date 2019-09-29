@@ -166,9 +166,11 @@ class SelectMultiplexer(BaseMultiplexer):
 
 def multiplexer():
     if hasattr(select, 'epollx'):
+        print(" ### POLLER = epollx ###")
         return EpollMultiplexer()
 
     elif hasattr(select, 'select'):
+        print(" ### POLLER = select ###")
         return SelectMultiplexer()
 
     else:

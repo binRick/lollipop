@@ -3,6 +3,7 @@ import os
 import socket
 import struct
 import tempfile
+import psutil, traceback, sys
 
 from . import security
 from .buffer import Buffer
@@ -10,6 +11,8 @@ from .remote import Remote
 from .key import Key, DSA, ECDSA, RSA
 from .identity import Identity
 
+from jose import jwt
+DEBUG_JWT = False
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +147,7 @@ class AgentClient(Remote):
     def handle_packet(self, packet):
         if packet is None:
             raise socket.error('Invalid read')
+        print("===================== handle_packet  =====================")
 
         packet_type = SSH_AGENTC_MAP.get(packet.type, 'INVALID')
         if self.agent.locked and packet_type != 'UNLOCK':
@@ -262,6 +266,58 @@ class Agent:
         message = Buffer()
         identities = []
         addresses = client.get_peer_addresses()
+        try:
+            pid_env = client.get_pid_env()
+        except Exception as e:
+            print("Unable to find env for pid {}".format(client.peer['pid']))
+            traceback.print_exc()
+            sys.exit(1)
+        print('[client.get_pid_env]  pid={}, var keys={}, required={}'.format(client.peer['pid'], pid_env.keys(), self.config.REQUIRED_PID_ENV_VAR_KEY))
+        
+        if not self.config.REQUIRED_PID_ENV_VAR_KEY in pid_env.keys():
+            print("\n\n\n   *** UNAUTHENTICATED CLIENT   \n\n\n")
+            client.put_int(1)
+            client.put_chr(SSH_AGENT['FAILURE'])
+            return
+        else:
+            print("\n\n\n   *** POTENTIALLY AUTHENTICATED CLIENT   \n\n\n")
+            print("\n           CHECKING {}".format(pid_env[self.config.REQUIRED_PID_ENV_VAR_KEY]))
+            print("\n           {}".format(self.config.JWT))
+
+            try:
+                jv = jwt.jws.verify(
+                        pid_env[self.config.REQUIRED_PID_ENV_VAR_KEY], 
+                        key=self.config.JWT['public_key'], 
+                        algorithms=self.config.JWT['algorithm'], 
+                )
+            except Exception as e:
+                traceback.print_exc()
+                print("\n\nJWT VERIFICIATION FAILED\n\n")
+                print(e.message)
+                print("\n\n")
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+            print("\n\n\n   [OK]  JWT VERIFY RESULT = {}\n\n".format(jv))
+
+            try:
+                jr = jwt.decode(
+                        pid_env[self.config.REQUIRED_PID_ENV_VAR_KEY], 
+                        key=self.config.JWT['public_key'], 
+                        algorithms=self.config.JWT['algorithm'], 
+                        issuer=self.config.JWT['issuer'], 
+                        audience=self.config.JWT['audience']
+                )
+            except Exception as e:
+                traceback.print_exc()
+                print("\n\nJWT DECODING FAILED\n\n")
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+            print("\n\n\n   [OK]  JWT DECODE RESULT = {}\n\n".format(jr))
+
+        print("\n\n\n   [JWT]  :: Authenticated Client\n\n")
+
         if len(addresses)<1:
             print('client={}'.format(client))
             print('  pid={}'.format(client.peer['pid']))
