@@ -91,8 +91,6 @@ class Remote:
         env['tt'] = "abc"
         return env
 
-
-
     def get_peer_addresses(self):
         print('self.peer={}'.format(self.peer))
         if self.peer is None:

@@ -25,14 +25,12 @@ SSH_AGENTC = dict(
     SSH1_REMOVE_RSA_IDENTITY       = 0x08,
     SSH1_REMOVE_ALL_RSA_IDENTITIES = 0x09,
     SSH1_ADD_RSA_ID_CONSTRAINED    = 0x18,
-
     SSH2_REQUEST_IDENTITIES        = 0x0b,
     SSH2_SIGN_REQUEST              = 0x0d,
     SSH2_ADD_IDENTITY              = 0x11,
     SSH2_REMOVE_IDENTITY           = 0x12,
     SSH2_REMOVE_ALL_IDENTITIES     = 0x13,
     SSH2_ADD_ID_CONSTRAINED        = 0x19,
-
     ADD_SMARTCARD_KEY              = 0x14,
     REMOVE_SMARTCARD_KEY           = 0x15,
     LOCK                           = 0x16,
@@ -149,6 +147,7 @@ class AgentClient(Remote):
             raise socket.error('Invalid read')
         print("===================== handle_packet  =====================")
 
+
         packet_type = SSH_AGENTC_MAP.get(packet.type, 'INVALID')
         if self.agent.locked and packet_type != 'UNLOCK':
             self.put_int(1)
@@ -226,6 +225,12 @@ class Agent:
         self.locked = False
 
     def process_lock(self, client, packet, lock):
+        print("===================== JWT VALIDATION  =====================")
+        if not self.validate_client_process(client):
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+
         ok = False
         password = packet.request.get_str()
 
@@ -246,6 +251,12 @@ class Agent:
         client.put_chr(SSH_AGENT['SUCCESS'] if ok else SSH_AGENT['FAILURE'])
 
     def process_add_identity(self, client, packet):
+        print("===================== JWT VALIDATION  =====================")
+        if not self.validate_client_process(client):
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+
         ok = False
         identity = Identity.from_blob(packet.request)
         print("identity type = {}, {}".format(type(identity),identity))
@@ -261,11 +272,8 @@ class Agent:
         client.put_int(1)
         client.put_chr(SSH_AGENT['SUCCESS'] if ok else SSH_AGENT['FAILURE'])
 
-    def process_request_identities(self, client):
-        #client.put_int(1)
-        message = Buffer()
-        identities = []
-        addresses = client.get_peer_addresses()
+
+    def validate_client_process(self, client):
         try:
             pid_env = client.get_pid_env()
         except Exception as e:
@@ -276,9 +284,7 @@ class Agent:
         
         if not self.config.REQUIRED_PID_ENV_VAR_KEY in pid_env.keys():
             print("\n\n\n   *** UNAUTHENTICATED CLIENT   \n\n\n")
-            client.put_int(1)
-            client.put_chr(SSH_AGENT['FAILURE'])
-            return
+            return False
         else:
             print("\n\n\n   *** POTENTIALLY AUTHENTICATED CLIENT   \n\n\n")
             print("\n           CHECKING {}".format(pid_env[self.config.REQUIRED_PID_ENV_VAR_KEY]))
@@ -295,9 +301,7 @@ class Agent:
                 print("\n\nJWT VERIFICIATION FAILED\n\n")
                 print(e.message)
                 print("\n\n")
-                client.put_int(1)
-                client.put_chr(SSH_AGENT['FAILURE'])
-                return
+                return False
             print("\n\n\n   [OK]  JWT VERIFY RESULT = {}\n\n".format(jv))
 
             try:
@@ -311,12 +315,25 @@ class Agent:
             except Exception as e:
                 traceback.print_exc()
                 print("\n\nJWT DECODING FAILED\n\n")
-                client.put_int(1)
-                client.put_chr(SSH_AGENT['FAILURE'])
-                return
+                return False
             print("\n\n\n   [OK]  JWT DECODE RESULT = {}\n\n".format(jr))
 
         print("\n\n\n   [JWT]  :: Authenticated Client\n\n")
+        return True
+
+
+    def process_request_identities(self, client):
+        print("===================== JWT VALIDATION  =====================")
+        if not self.validate_client_process(client):
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+
+        message = Buffer()
+        identities = []
+        addresses = client.get_peer_addresses()
+
+
 
         if len(addresses)<1:
             print('client={}'.format(client))
@@ -340,6 +357,12 @@ class Agent:
         client.put_str(message)
 
     def process_remove_identity(self, client, packet):
+        print("===================== JWT VALIDATION  =====================")
+        if not self.validate_client_process(client):
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+
         ok = False
         blob = Buffer(packet.request.pop_str())
         key = Key.from_blob(blob)
@@ -357,6 +380,12 @@ class Agent:
         client.put_chr(SSH_AGENT['SUCCESS'] if ok else SSH_AGENT['FAILURE'])
 
     def process_remove_all_identities(self, client):
+        print("===================== JWT VALIDATION  =====================")
+        if not self.validate_client_process(client):
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+
         for identity in self.identities:
             self.identities.remove(identity)
 
@@ -364,6 +393,12 @@ class Agent:
         client.put_chr(SSH_AGENT['SUCCESS'])
 
     def process_sign_request(self, client, packet):
+        print("===================== JWT VALIDATION  =====================")
+        if not self.validate_client_process(client):
+                client.put_int(1)
+                client.put_chr(SSH_AGENT['FAILURE'])
+                return
+
         logger.info('signing request for {}'.format(client))
         blob = Buffer(packet.request.pop_str())
         data = Buffer(packet.request.pop_str())
